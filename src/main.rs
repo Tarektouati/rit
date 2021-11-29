@@ -10,8 +10,10 @@ fn perform_command (command: &str) {
         "init" => {
             cmd::init::create_empty_repo();
         },
+        "commit" => {
+            cmd::commit::create_commit();
+        },
         _ => {
-            println!();
             eprintln!("error: unknown command {}", command);
             exit(1);
         }
