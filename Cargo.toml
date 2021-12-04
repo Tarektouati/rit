@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 walkdir = "2"
+rust-crypto = "^0.2"
+deflate = "0.8.6"
