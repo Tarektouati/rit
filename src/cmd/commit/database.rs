@@ -25,7 +25,7 @@ fn compress_content(content: String) -> Option<Vec<u8>> {
    return None;
 }
 
-fn write_object(oid: String, content: String) {
+fn write_object(oid: &String, content: String) {
    let (object_folder, object_filename) = oid.split_at(2);
    let db_path = get_db_path();
    let folder_path = format!("{}/{}", db_path, object_folder);
@@ -41,14 +41,15 @@ fn write_object(oid: String, content: String) {
    }
 }
 
-pub fn store_file(file_content: String) {
+pub fn store_file(file_content: String) -> String {
    // encode to ASCII_8BIT
    let byte_string: &[u8] = file_content.as_bytes();
    // format content to string with  "#{ object.type } #{ string.bytesize }\0#{ string }”
    let content = format!("blob {}\0{}", byte_string.len(), file_content);
    // create oid SHA1 of content
    let oid = oid_from_str(content.as_str());
-
    // write git object
-   write_object(oid, content)
+   write_object(&oid, content);
+
+   return oid;
 }

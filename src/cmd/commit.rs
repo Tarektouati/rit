@@ -3,41 +3,37 @@ use std::fs;
 use walkdir::{DirEntry, WalkDir};
 mod database;
 
-
 fn is_git_dir(entry: &DirEntry) -> bool {
     return entry.file_name().to_str().unwrap() == ".git";
 }
 
-fn read_file(entry: &DirEntry) -> Result<String, std::io::Error> {
-    let file_path = entry.path().display().to_string();
-    if entry.file_type().is_dir() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Cannot read directory content, try a file instead",
-        ));
-    }
-    let content = fs::read_to_string(file_path);
-    match content {
-        Ok(content) => Ok(content),
-        Err(err) => Err(err),
-    }
+fn read_file(file_path: &String) -> String {
+    let content = fs::read_to_string(file_path).expect("Something went wrong reading the file");
+    content
 }
 
 pub fn create_commit() {
     let path = current_dir().unwrap().display().to_string();
-    let mut walker = WalkDir::new(&path).into_iter();
-    loop {
-        match walker.next() {
-            Some(Ok(entry)) => {
-                if is_git_dir(&entry) {
-                    return;
-                }
-                if let Ok(file_content) = read_file(&entry) {
-                    database::store_file(file_content)
-                }
-            }
-            Some(Err(e)) => println!("Error: {}", e),
-            None => break,
-        }
-    }
+    let files: Vec<_> = WalkDir::new(&path)
+        .into_iter()
+        .filter_map(|f| f.ok())
+        .filter(|f| !is_git_dir(f))
+        .filter(|f| f.file_type().is_file())
+        .map(|f| f.path().to_owned())
+        .collect();
+    
+    let entries: Vec<(String, String)> = files
+        .iter()
+        .map(|f| {
+            let file_path: String = f.display().to_string();
+            let content = read_file(&file_path);
+            (file_path, content)
+        })
+        .map(|f| {
+            let (file_path, content) = f;
+            let oid = database::store_file(content);
+            return (oid, file_path);
+        })
+        .collect();
+        // create tree from entries
 }
