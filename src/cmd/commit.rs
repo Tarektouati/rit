@@ -1,49 +1,61 @@
-use std::env::current_dir;
-use std::fs;
-use std::path::{PathBuf};
-use walkdir::{DirEntry, WalkDir};
+use std::env::{current_dir, var};
+mod author;
 mod database;
+mod tree;
+mod workspace;
 
-fn is_git_dir(entry: &DirEntry) -> bool {
-    return entry.file_name().to_str().unwrap() == ".git";
+struct Commit {
+    tree: String,
+    author: author::Author,
+    message: String,
 }
 
-fn read_file(file_path: &String) -> String {
-    let content = fs::read_to_string(file_path).expect("Something went wrong reading the file");
-    content
-}
+impl Commit {
+    pub fn new(tree: String, author: author::Author, message: String) -> Commit {
+        Commit {
+            tree,
+            author,
+            message,
+        }
+    }
 
-fn prepare_file(file: &PathBuf, path: &String) -> (String, String) {
-    let shortend_path =  format!("{}/", &path);
-    let file_path: String = file.display().to_string();
-    let file_name: String = String::from(&file_path.replace(&shortend_path, ""));
-    let content = read_file(&file_path);
-    (file_name, content)
-}
-
-fn find_files(path: &String) -> Vec<PathBuf> {
-    return WalkDir::new(&path)
-    .into_iter()
-    .filter_map(|f| f.ok())
-    .filter(|f| !is_git_dir(f))
-    .filter(|f| f.file_type().is_file())
-    .map(|f| f.path().to_owned())
-    .collect();
+    pub fn to_string(&self) -> String {
+        let lines = [
+            format!("tree {}", self.tree),
+            format!("author {}", self.author.to_string()),
+            format!("committer {}", self.author.to_string()),
+            "".to_string(),
+            self.message.to_string(),
+        ];
+        return lines.join("\n");
+    }
 }
 
 pub fn create_commit() {
     let path = current_dir().unwrap().display().to_string();
-    let files = find_files(&path);
-    let entries: Vec<(String, String)> = files
+    let database = database::Database::new(&path);
+    let workspace = workspace::Workspace::new(&path);
+    let entries: Vec<(String, String)> = workspace
+        .list_files()
         .iter()
-        .map(|f| prepare_file(f, &path))
+        .map(|f| workspace.read_file(f))
         .map(|(file_name, content)| {
-            let oid = database::store_file(database::FileType::Blob, content);
+            let oid = database.store(database::FileType::Blob, content);
             return (oid, file_name);
         })
         .collect();
 
-    let tree = database::store_tree(entries);
-    println!("tree: {}", tree);
-    unimplemented!();
+    let tree = database.store(
+        database::FileType::Tree,
+        tree::Tree::new(entries).to_string(),
+    );
+    let name = var("RIT_AUTHOR_NAME").expect("RIT_AUTHOR_NAME not set");
+    let email = var("RIT_AUTHOR_EMAIL").expect("RIT_AUTHOR_EMAIL not set");
+    let author = author::Author::new(name, email);
+    // TODO: ask user input commit message
+    let message: &str = "first commit";
+    let commit = Commit::new(tree, author, String::from(message));
+    let commit_oid = database.store(database::FileType::Commit, commit.to_string());
+
+    println!("commit: {}", commit_oid);
 }
