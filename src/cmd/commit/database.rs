@@ -3,7 +3,7 @@ use crypto::sha1::Sha1;
 use deflate::write::ZlibEncoder;
 use deflate::Compression;
 use std::fs::{create_dir, File};
-use std::io::Write;
+use std::io::{Write, Error};
 
 pub enum FileType {
    Blob,
@@ -13,6 +13,7 @@ pub enum FileType {
 
 pub struct Database {
    db_path: String,
+   head_path: String,
 }
 
 impl Database {
@@ -46,6 +47,7 @@ impl Database {
    pub fn new(path: &String) -> Database {
       Database {
          db_path: format!("{}/.git/objects", path.to_string()),
+         head_path: format!("{}/.git/HEAD", path.to_string()),
       }
    }
 
@@ -64,5 +66,11 @@ impl Database {
       // write git object
       self.write_object(&oid, content);
       return oid;
+   }
+
+   pub fn set_head(&self, oid: &String) -> Result<(),Error> {
+      let mut file = File::create(&self.head_path)?;
+      file.write_all(oid.as_bytes())?;
+      return Ok(());
    }
 }

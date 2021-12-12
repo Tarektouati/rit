@@ -54,8 +54,10 @@ pub fn create_commit() {
     let author = author::Author::new(name, email);
     // TODO: ask user input commit message
     let message: &str = "first commit";
-    let commit = Commit::new(tree, author, String::from(message));
-    let commit_oid = database.store(database::FileType::Commit, commit.to_string());
+    let commit = database.store(database::FileType::Commit, Commit::new(tree, author, String::from(message)).to_string());
 
-    println!("commit: {}", commit_oid);
+    match database.set_head(&commit){
+        Ok(_) => println!("Successfully set HEAD to {}", commit),
+        Err(e) => eprintln!("Failed to set HEAD to {}: {}", commit, e),
+    }
 }
