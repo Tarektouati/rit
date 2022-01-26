@@ -3,6 +3,7 @@ mod author;
 mod database;
 mod tree;
 mod workspace;
+mod refs;
 
 struct Commit {
     tree: String,
@@ -33,6 +34,7 @@ impl Commit {
 
 pub fn create_commit() {
     let path = current_dir().unwrap().display().to_string();
+    let refs = refs::Refs::new(&path);
     let database = database::Database::new(&path);
     let workspace = workspace::Workspace::new(&path);
     let entries: Vec<(String, String)> = workspace
@@ -40,23 +42,25 @@ pub fn create_commit() {
         .iter()
         .map(|f| workspace.read_file(f))
         .map(|(file_name, content)| {
-            let oid = database.store(database::FileType::Blob, content);
+            let oid = database.store(database::FileType::Blob, content.as_bytes().to_vec());
             return (oid, file_name);
         })
         .collect();
 
     let tree = database.store(
         database::FileType::Tree,
-        tree::Tree::new(entries).to_string(),
+        tree::Tree::new(entries).to_content(),
     );
+
+    // let parent = refs.read();
     let name = var("RIT_AUTHOR_NAME").expect("RIT_AUTHOR_NAME not set");
     let email = var("RIT_AUTHOR_EMAIL").expect("RIT_AUTHOR_EMAIL not set");
     let author = author::Author::new(name, email);
     // TODO: ask user input commit message
     let message: &str = "first commit";
-    let commit = database.store(database::FileType::Commit, Commit::new(tree, author, String::from(message)).to_string());
+    let commit = database.store(database::FileType::Commit, Commit::new(tree, author, String::from(message)).to_string().as_bytes().to_vec() );
 
-    match database.set_head(&commit){
+    match refs.write(&commit){
         Ok(_) => println!("Successfully set HEAD to {}", commit),
         Err(e) => eprintln!("Failed to set HEAD to {}: {}", commit, e),
     }
