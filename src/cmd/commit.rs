@@ -1,4 +1,6 @@
 use std::env::{current_dir, var};
+use std::io::{stdin, stdout, Write};
+
 mod author;
 mod database;
 mod tree;
@@ -32,6 +34,14 @@ impl Commit {
     }
 }
 
+fn ask_for_commit_message() -> String {
+    let mut message = String::new();
+    print!("commit message: ");
+    stdout().flush().unwrap();
+    stdin().read_line(&mut message).unwrap();
+    return message.trim().to_string();
+}
+
 pub fn create_commit() {
     let path = current_dir().unwrap().display().to_string();
     let refs = refs::Refs::new(&path);
@@ -56,9 +66,8 @@ pub fn create_commit() {
     let name = var("RIT_AUTHOR_NAME").expect("RIT_AUTHOR_NAME not set");
     let email = var("RIT_AUTHOR_EMAIL").expect("RIT_AUTHOR_EMAIL not set");
     let author = author::Author::new(name, email);
-    // TODO: ask user input commit message
-    let message: &str = "first commit";
-    let commit = database.store(database::FileType::Commit, Commit::new(tree, author, String::from(message)).to_string().as_bytes().to_vec() );
+    let message = ask_for_commit_message();
+    let commit = database.store(database::FileType::Commit, Commit::new(tree, author, message).to_string().as_bytes().to_vec() );
 
     match refs.write(&commit){
         Ok(_) => println!("Successfully set HEAD to {}", commit),
