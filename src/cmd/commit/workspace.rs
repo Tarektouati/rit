@@ -26,11 +26,11 @@ impl Workspace {
         let shortend_path = format!("{}/", &self.path);
         let file_path: String = file.display().to_string();
         let file_name: String = String::from(&file_path.replace(&shortend_path, ""));
-        let content = fs::read_to_string(file_path).expect("Something went wrong reading the file");
+        let content = fs::read_to_string(&file_path).expect(format!("Something went wrong reading the file: {}", &file_path).as_str());
         (file_name, content)
     }
 
     fn is_git_dir(&self, entry: &DirEntry) -> bool {
-        return entry.file_name().to_str().unwrap() == ".git";
+        return entry.path().to_str().unwrap().contains(".git");
     }
 }
