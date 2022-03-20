@@ -1,4 +1,5 @@
 use std::num::ParseIntError;
+use std::fs::metadata;
 
 const MODE: &str = "100644";
 
@@ -16,7 +17,11 @@ pub struct Tree {
 
 impl Tree {
     pub fn new(entries: Vec<(String, String)>) -> Tree {
-        Tree { entries: entries }
+        Tree { entries }
+    }
+
+    fn entry_mode() {
+        unimplemented!()
     }
 
     pub fn to_content(&self) -> Vec<u8> {
