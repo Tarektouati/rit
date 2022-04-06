@@ -1,13 +1,17 @@
 use std::num::ParseIntError;
-
-const MODE: &str = "100644";
-
+use std::fs;
+use std::os::macos::fs::MetadataExt;
 
 fn decode_hex(s: String) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
         .collect()
+}
+
+fn file_mode(s: &String) -> String {
+    let mode = fs::metadata(s).unwrap().st_mode();
+    format!("{:o}", &mode)
 }
 
 pub struct Tree {
@@ -29,7 +33,7 @@ impl Tree {
     pub fn to_string(&self) -> Vec<u8> {
         let mut tree_vec = Vec::new();
         for (oid, name) in self.entries.iter() {
-            let mut entry_vec : Vec<u8> = format!("{} {}\0", MODE, name).as_bytes().to_vec();
+            let mut entry_vec : Vec<u8> = format!("{} {}\0", file_mode(name), name).as_bytes().to_vec();
             println!("{}", oid);
             entry_vec.extend_from_slice(&decode_hex(oid.to_string()).expect("invalid oid"));
             tree_vec.extend_from_slice(&entry_vec);
