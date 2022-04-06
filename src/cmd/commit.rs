@@ -6,6 +6,7 @@ mod database;
 mod refs;
 mod tree;
 mod workspace;
+mod lockfile;
 
 struct Commit {
     parent: Option<String>,

@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::{Error, Read, Write};
 use std::path::Path;
 
+use super::lockfile::Lockfile;
+
 pub struct Refs {
     head_path: String,
 }
@@ -31,8 +33,12 @@ impl Refs {
         }
     }
     pub fn write(&self, oid: &String) -> Result<(), Error> {
-        let mut file = File::create(&self.head_path)?;
-        file.write_all(oid.as_bytes())?;
+        if let Some(mut file) = Lockfile::hold_for_update(Path::new(&self.head_path).to_path_buf())? {
+            file.write_all(oid.as_bytes())?;
+            file.write_all(b"\n")?;
+            file.commit()?;
+        }
         return Ok(());
+
     }
 }
