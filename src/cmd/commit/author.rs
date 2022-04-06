@@ -1,23 +1,26 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::offset::Local;
 
 pub struct Author {
     name: String,
     email: String,
-    date: u128,
+    timestamp: String,
+    offset: String,
 }
 
 impl Author {
     pub fn new(name: String, email: String) -> Author {
+        let ln = Local::now();
         Author {
             name: name.to_string(),
             email: email.to_string(),
-            date: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis(),
+            timestamp: ln.timestamp().to_string(),
+            offset: ln.with_timezone(&Local).format("%z").to_string(),
         }
     }
     pub fn to_string(&self) -> String {
-        format!("{} <{}> {}", self.name, self.email, self.date)
+        format!(
+            "{} <{}> {} {}",
+            self.name, self.email, self.timestamp, self.offset
+        )
     }
 }
