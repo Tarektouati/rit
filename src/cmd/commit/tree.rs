@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 use std::fs;
-use std::os::macos::fs::MetadataExt;
+use std::os::unix::prelude::PermissionsExt;
 
 fn decode_hex(s: String) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
@@ -9,9 +9,8 @@ fn decode_hex(s: String) -> Result<Vec<u8>, ParseIntError> {
         .collect()
 }
 
-fn file_mode(s: &String) -> String {
-    let mode = fs::metadata(s).unwrap().st_mode();
-    format!("{:o}", &mode)
+fn file_mode(s: &String) -> u32 {
+    return fs::metadata(s).unwrap().permissions().mode();
 }
 
 pub struct Tree {
@@ -33,7 +32,7 @@ impl Tree {
     pub fn to_string(&self) -> Vec<u8> {
         let mut tree_vec = Vec::new();
         for (oid, name) in self.entries.iter() {
-            let mut entry_vec : Vec<u8> = format!("{} {}\0", file_mode(name), name).as_bytes().to_vec();
+            let mut entry_vec : Vec<u8> = format!("{:o} {}\0", file_mode(name), name).as_bytes().to_vec();
             println!("{}", oid);
             entry_vec.extend_from_slice(&decode_hex(oid.to_string()).expect("invalid oid"));
             tree_vec.extend_from_slice(&entry_vec);
