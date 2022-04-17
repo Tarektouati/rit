@@ -1,5 +1,5 @@
-use std::fs::{File, OpenOptions, rename};
-use std::io::{Write,Error, ErrorKind};
+use std::fs::{rename, File, OpenOptions};
+use std::io::{Error, ErrorKind, Write};
 use std::path::PathBuf;
 
 pub struct Lockfile {
@@ -15,7 +15,7 @@ impl Lockfile {
             .create_new(true)
             .write(true)
             .create(true)
-            .open(&path);
+            .open(&lockfile_path);
 
         let lockfile = match file {
             Ok(f) => f,
@@ -36,8 +36,7 @@ impl Lockfile {
     }
 
     pub fn commit(&self) -> Result<(), Error> {
-        rename(&self.lockfile_path, &self.path)?;
-        Ok(())
+        rename(&self.lockfile_path, &self.path)
     }
 }
 

@@ -20,10 +20,8 @@ impl Lockfile {
             Ok(f) => f,
             Err(err) => {
                 if err.kind() == ErrorKind::AlreadyExists {
-                    println!("FileExistsError: {}", err);
                     return Ok(None);
                 } else {
-                    println!("FileKind: {}", err);
                     return Err(err.kind());
                 }
             }

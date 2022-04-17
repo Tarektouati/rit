@@ -46,7 +46,6 @@ impl Commit {
         }
 
         commit_lines.append(&mut commit_body);
-        println!("{}", commit_lines.join("\n"));
         return commit_lines.join("\n");
     }
 }

@@ -27,7 +27,7 @@ impl Refs {
                 Some(contents)
             }
             Err(e) => {
-                println!("{}", e);
+                eprintln!("{}", e);
                 None
             }
         }
